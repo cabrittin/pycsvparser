@@ -7,6 +7,6 @@ setup(name='pycsvparser',
       description='Parser csv files',
       author='Christopher Brittin',
       author_email='cabrittin@gmail.com',
-      url='',
+      url='https://cabrittin@bitbucket.org/cabrittin/pycsvparser.git',
       packages=['distutils', 'distutils.command'],
      )
