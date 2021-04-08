@@ -32,7 +32,7 @@ def parse_file(fin,container,parser,comment=None, delimiter=',',
 
     """
     with open(fin, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',')
+        reader = csv.reader(csvfile, delimiter=delimiter)
         for i in range(skip_header): next(reader)
         for row in reader:
             if comment and row[0][0] == comment: continue
