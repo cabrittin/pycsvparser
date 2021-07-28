@@ -20,18 +20,22 @@ f3 = 'data/test3.csv'
 f4 = 'data/test4.csv'
 
 print("Read into list")
-d = read.into_list(f1)
-print(d)
+container = []
+read.into_list(f1,container)
+print(container)
+
 
 print("Read into list int")
-d = read.into_list(f1,dtype=int)
-print(d)
-
+container = []
+read.into_list_dtype(f1,container,dtype=int)
+print(container)
 
 print("Read into multi_dim list")
-d = read.into_list(f2, multi_dim=True, skip_header=1)
-print(d)
+container = []
+read.into_list(f2,container,skip_header=1)
+print(container)
 
+"""
 print("Read into dict")
 d = read.into_dict(f2,skip_header=1)
 print(d)
@@ -55,4 +59,4 @@ print(d)
 print("Read into map ktype=int,itype=int")
 d = read.into_map(f4,ktype=int,itype=int,multi_dim=False,skip_header=1)
 print(d)
-
+"""

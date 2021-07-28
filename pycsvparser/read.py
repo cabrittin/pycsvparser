@@ -16,7 +16,7 @@ import csv
 import configparser
 import ast
 
-def parse_file(fin,container,parser,comment=None, delimiter=',', 
+def _parse_file(fin,container,parser,comment=None, delimiter=',', 
         quotechar = ' ', quoting=csv.QUOTE_NONE,skip_header=0):
     """
     Wrapper for parsing files. 
@@ -38,8 +38,46 @@ def parse_file(fin,container,parser,comment=None, delimiter=',',
             if comment and row[0][0] == comment: continue
             parser(container,row)
         
+def parse_file(func):#fin,container,parser,comment=None, delimiter=',', 
+    #    quotechar = ' ', quoting=csv.QUOTE_NONE,skip_header=0):
+    """
+    Wrapper for parsing files. 
+    
+    Parameters
+    ----------
+    fin: <str> Path to input file
+    container: A data structure used to hold the data. container type must be 
+        compatible with the parser.
+    parser: <function> A function that parses each row in the csv file
+    delimiter: <str,optional,default:' '> row delimeter
+    
 
-def into_list(fin,dtype=None,multi_dim=False,**kwargs):
+    """
+    
+    def wrapper(fin,container,comment=None, delimiter=',', 
+            quotechar = ' ', quoting=csv.QUOTE_NONE,skip_header=0,**kwargs):
+        with open(fin, newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter=delimiter)
+            for i in range(skip_header): next(reader)
+            for row in reader:
+                if comment and row[0][0] == comment: continue
+                func(row,container,**kwargs)
+            
+    return wrapper
+
+@parse_file
+def into_list(row,container,**kwargs):
+    container.append(row[0]) 
+
+@parse_file
+def into_list_dtype(row,container,**kwargs): 
+    container.append(kwargs['dtype'](row[0])) 
+
+@parse_file
+def into_list_multi(row,container,**kwargs):
+    container.append(row)
+
+def _into_list(fin,dtype=None,multi_dim=False,**kwargs):
     """
     Read data from file into a list. 
 
