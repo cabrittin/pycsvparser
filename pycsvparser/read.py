@@ -16,128 +16,103 @@ import csv
 import configparser
 import ast
 
-def _parse_file(fin,container,parser,comment=None, delimiter=',', 
-        quotechar = ' ', quoting=csv.QUOTE_NONE,skip_header=0):
-    """
-    Wrapper for parsing files. 
+
+class parse_file(object):
+    def __init__(self,fname,mode='r',comment=None,skip_header=0,delimiter=',',**kwargs):
+        self.__fname__ = fname
+        self.__mode__ = mode
+        self.comment = comment
+        self.skip_header = skip_header
+        self.delimiter = delimiter
+
+    def __call__(self,func,**kwargs):
+        def wrapper(container,comment=None, 
+                quotechar = ' ', quoting=csv.QUOTE_NONE,**kwargs):
+            with open(self.__fname__,self.__mode__) as csvfile:
+                reader = csv.reader(csvfile, delimiter=self.delimiter,
+                                    quotechar=quotechar,quoting=quoting)
+                for i in range(self.skip_header): next(reader)
+                indexer = 0
+                for row in reader:
+                    if self.comment and row[0][0] == self.comment: continue
+                    func(container,row=row,indexer=indexer,**kwargs)
+                    indexer += 1
+            return None
+        return wrapper
+
+def count_lines(fname,**kwargs):
+    @parse_file(fname)
+    def row_count(counter,**kwargs):
+        counter += 1
     
-    Parameters
-    ----------
-    fin: <str> Path to input file
-    container: A data structure used to hold the data. container type must be 
-        compatible with the parser.
-    parser: <function> A function that parses each row in the csv file
-    delimiter: <str,optional,default:' '> row delimeter
-    
+    counter = 0
+    row_count(counter)
+    return counter
 
-    """
-    with open(fin, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=delimiter)
-        for i in range(skip_header): next(reader)
-        for row in reader:
-            if comment and row[0][0] == comment: continue
-            parser(container,row)
-        
-def parse_file(func):#fin,container,parser,comment=None, delimiter=',', 
-    #    quotechar = ' ', quoting=csv.QUOTE_NONE,skip_header=0):
-    """
-    Wrapper for parsing files. 
-    
-    Parameters
-    ----------
-    fin: <str> Path to input file
-    container: A data structure used to hold the data. container type must be 
-        compatible with the parser.
-    parser: <function> A function that parses each row in the csv file
-    delimiter: <str,optional,default:' '> row delimeter
-    
-
-    """
-    
-    def wrapper(fin,container,comment=None, delimiter=',', 
-            quotechar = ' ', quoting=csv.QUOTE_NONE,skip_header=0,**kwargs):
-        with open(fin, newline='') as csvfile:
-            reader = csv.reader(csvfile, delimiter=delimiter)
-            for i in range(skip_header): next(reader)
-            for row in reader:
-                if comment and row[0][0] == comment: continue
-                func(row,container,**kwargs)
-            
-    return wrapper
-
-@parse_file
-def into_list(row,container,**kwargs):
-    container.append(row[0]) 
-
-@parse_file
-def into_list_dtype(row,container,**kwargs): 
-    container.append(kwargs['dtype'](row[0])) 
-
-@parse_file
-def into_list_multi(row,container,**kwargs):
-    container.append(row)
-
-def _into_list(fin,dtype=None,multi_dim=False,**kwargs):
+def into_list(fname,dtype=None,multi_dim=False,delimiter=',',skip_header=0,**kwargs):
     """
     Read data from file into a list. 
 
     Parameters
     ----------
-    fIn : <str> Path to input file
+    fname : <str> Path to input file
     dtype: <dtype, optional, defalut: None> data type of list entries
     multi_dim : <bool,optional,default:False> Read items as list
     kwargs: see parse_file function
     """
+    container = []
     if multi_dim:
         if dtype: 
-            def parser(container,row):
-                container.append([r for r in map(dtype,row)])
+            @parse_file(fname,dytpe=dtype,delimiter=delimiter,skip_header=skip_header)
+            def row_into_container(container,row=None,**kwargs):
+                container.append([r for r in map(kwargs['dtype'],row)])
         else:
-            def parser(container,row):
-                container.append(row)
+            @parse_file(fname,delimiter=delimiter,skip_header=skip_header)
+            def row_into_container(container,row=None,**kwargs):
+                container.append(row) 
     else:
         if dtype: 
-            def parser(container,row):
-                container.append(dtype(row[0]))
+            @parse_file(fname,dtype=dtype,delimiter=delimiter,skip_header=skip_header)
+            def row_into_container(container,row=None,**kwargs):
+                container.append(kwargs['dtype'](row[0]))
         else:
-            def parser(container,row):
-                container.append(row[0])
-    container = []
-    parse_file(fin,container,parser,**kwargs)
+            @parse_file(fname,delimiter=delimiter,skip_header=skip_header)
+            def row_into_container(container,row=None,**kwargs):
+                container.append(row[0]) 
+    row_into_container(container)
     return container
 
-def into_dict(fin,ktype=None,itype=None,multi_dim=False,**kwargs):
+def into_dict(fname,dtype=None,multi_dim=False,**kwargs):
     """
-    Read data from file into a dictionary. By default
-    first element of each row is assigned to the key
-    and the second element is assigned to the value.
+    Read data from file into a list. 
 
     Parameters
     ----------
-    fin : <str> Path to input file
-    ktype: <dtype, optional, defalut: None> data type of keys
-    itype: <dtype, optional, defalut: None> data type of items
+    fname : <str> Path to input file
+    dtype: <dtype, optional, defalut: None> data type of list entries
     multi_dim : <bool,optional,default:False> Read items as list
     kwargs: see parse_file function
     """
-    if multi_dim:
-        if itype: 
-            def parser(container,row):
-                container[row[0]] = [r for r in map(itype,row[1:])]
-        else:
-            def parser(container,row):
-                container[row[0]] = row[1:]
-    else:
-        if itype: 
-            def parser(container,row):
-                container[row[0]] = itype(row[1])
-        else:
-            def parser(container,row):
-                container[row[0]] = row[1]
-
     container = {}
-    parse_file(fin,container,parser,**kwargs)
-    if ktype: container = dict([(ktype(k),v) for (k,v) in container.items()])
+    if multi_dim:
+        if dtype: 
+            @parse_file(fname,dytpe=dtype)
+            def row_into_container(container,row=None,**kwargs):
+                container[row[0]] = [r for r in map(kwargs['dtype'],row[1:])]
+        else:
+            @parse_file(fname)
+            def row_into_container(container,row=None,**kwargs):
+                container[row[0]] = row[1:] 
+    else:
+        if dtype: 
+            @parse_file(fname,dtype=dtype)
+            def row_into_container(container,row=None,dtype=dtype,**kwargs):
+                container[row[0]] = dtype(row[1])
+        else:
+            @parse_file(fname)
+            def row_into_container(container,row=None,**kwargs):
+                container[row[0]] = row[1] 
+    row_into_container(container)
     return container
 
 
@@ -175,4 +150,19 @@ def into_map(fin,ktype=None,itype=None,multi_dim=True,**kwargs):
     if itype: container = dict([(k,itype(v)) for (k,v) in container.items()])
     return container
 
+def into_lr_dict(fin):
+    """
+    Creates left/rigth dictionary for cells
+
+    Parameters
+    ----------
+    fIn : str
+      Path to file specifying left/right cells. Should have format
+      'left_cell,right_cell'
+    """   
+    lr = into_dict(fin)
+    _keys = list(lr.keys())
+    for key in _keys:
+        lr[lr[key]] = key
+    return lr
 
