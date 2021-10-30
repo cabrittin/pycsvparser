@@ -97,7 +97,7 @@ def into_dict(fname,dtype=None,multi_dim=False,**kwargs):
     if multi_dim:
         if dtype: 
             @parse_file(fname,dytpe=dtype)
-            def row_into_container(container,row=None,**kwargs):
+            def row_into_container(container,row=None,dtype=dtype,**kwargs):
                 container[row[0]] = [r for r in map(kwargs['dtype'],row[1:])]
         else:
             @parse_file(fname)
