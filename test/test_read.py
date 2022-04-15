@@ -20,20 +20,21 @@ f3 = 'data/test3.csv'
 f4 = 'data/test4.csv'
 
 print("Read into list")
-container = []
-read.into_list(f1,container)
-print(container)
+l = read.into_list(f1)
+print(l)
 
 
 print("Read into list int")
-container = []
-read.into_list_dtype(f1,container,dtype=int)
-print(container)
+l = read.into_list(f1,dtype=int)
+print(l)
 
 print("Read into multi_dim list")
-container = []
-read.into_list(f2,container,skip_header=1)
-print(container)
+l = read.into_list(f2,skip_header=1)
+print(l)
+
+print("Get header")
+l = read.get_header(f2)
+print(l)
 
 """
 print("Read into dict")
