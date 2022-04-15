@@ -49,6 +49,14 @@ def count_lines(fname,**kwargs):
     row_count(counter)
     return counter
 
+def get_header(fname,delimiter=','):
+    header = None 
+    with open(fname) as f:
+        lines = f.read() ##Assume the sample file has 3 lines
+        header = lines.split('\n', 1)[0]
+        header = header.split(delimiter)
+    return header
+
 def into_list(fname,dtype=None,multi_dim=False,delimiter=',',skip_header=0,**kwargs):
     """
     Read data from file into a list. 
@@ -63,9 +71,9 @@ def into_list(fname,dtype=None,multi_dim=False,delimiter=',',skip_header=0,**kwa
     container = []
     if multi_dim:
         if dtype: 
-            @parse_file(fname,dytpe=dtype,delimiter=delimiter,skip_header=skip_header)
-            def row_into_container(container,row=None,**kwargs):
-                container.append([r for r in map(kwargs['dtype'],row)])
+            @parse_file(fname,dtype=dtype,delimiter=delimiter,skip_header=skip_header)
+            def row_into_container(container,row=None,dytpe=dtype,**kwargs):
+                container.append([r for r in map(dtype,row)])
         else:
             @parse_file(fname,delimiter=delimiter,skip_header=skip_header)
             def row_into_container(container,row=None,**kwargs):
@@ -73,8 +81,8 @@ def into_list(fname,dtype=None,multi_dim=False,delimiter=',',skip_header=0,**kwa
     else:
         if dtype: 
             @parse_file(fname,dtype=dtype,delimiter=delimiter,skip_header=skip_header)
-            def row_into_container(container,row=None,**kwargs):
-                container.append(kwargs['dtype'](row[0]))
+            def row_into_container(container,row=None,dtype=dtype,**kwargs):
+                container.append(dtype(row[0]))
         else:
             @parse_file(fname,delimiter=delimiter,skip_header=skip_header)
             def row_into_container(container,row=None,**kwargs):
